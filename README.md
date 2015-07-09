@@ -30,4 +30,3 @@ Requires python3
 ##TODO
 - general clean up, there are a few hacky things in the script currently
 - provide a mechanism for injectable converters, (e.g. url-encoding parameters)
-- 
