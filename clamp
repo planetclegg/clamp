@@ -1,22 +1,18 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # PYTHON_ARGCOMPLETE_OK
 
-
-import json, argparse, os, sys
+import argparse, os, sys
 import re
 import shlex
-import pkg_resources
 import readline
+import configparser
 
 try:
     import argcomplete
 except: 
     pass
 
-try:
-    __version__ = str(pkg_resources.require("clamp")[0].version)
-except:
-    __version__ = "0.0.0"
+__version__ = "0.0.1"
 
 def get_vars(searchstr):
     #Find variables in the form $(-x=y) or just $(-x)
@@ -45,25 +41,75 @@ def var_replace(subvars, args, searchstr):
         searchstr = searchstr.replace(replstr, arg if arg else s[1])
     return searchstr
 
-def write_config(commands, file_name=".clamp"):
-    with open(file_name, "w") as f:
-        f.write(json.dumps(commands, sort_keys=True, indent=4, separators=(',', ': ')))
-def read_config(file_name=".clamp"):
-    try:
-        with open(file_name) as f:
-            commands = json.load(f)
-    except:
-        commands = {}
-    return commands 
 
-parser = argparse.ArgumentParser(description='CLAMP')
+class ConfigParser(configparser.ConfigParser):
+    """subclass that can get options() without defaults
+    """
+    def options(self, section, no_defaults=False, **kwargs):
+        if no_defaults:
+            try:
+                return list(self._sections[section].keys())
+            except KeyError:
+                raise NoSectionError(section)
+        else:
+            return super().options(section, **kwargs)
+
+
+section_commands="COMMANDS"
+config = ConfigParser()
+config.optionxform = str  # use case-sensitivity
+config.read('.clamp')
+if not config.has_section(section_commands):
+    raise Error(".clamp file not found or missing [COMMANDS] section!!")
+
+
+# where things are defined in [DEFAULT] override with values from environment if they exist
+defaults = config.defaults()
+for name in defaults.keys():
+    if (name in os.environ):
+        config['DEFAULT'][name] = os.environ[name]
+
+def expandCommand(cmdName, arguments, depth):
+    if (depth > 5):
+        raise Exception("too much recursion");
+    if debug:
+        print("expandCommand %s: %s" % (cmdName, arguments))
+    if cmdName in config.options(section_commands, no_defaults=True):
+        commandText = config.get(section_commands, cmdName)
+        #print ("FOUND " + commandText)
+        parser = argparse.ArgumentParser(description=cmdName)
+        cmd_args = get_vars(commandText)
+        #print ("cmd_args=%s" % cmd_args)
+        for a in cmd_args:
+            parser.add_argument(a[0], default=a[1], required=False if a[1] else True)
+        if depth == 0:
+            try:
+                #print ("argcomplete!!!!!!!!!!!!!!!!!")
+                argcomplete.autocomplete(parser)
+            except:
+                pass
+        args = parser.parse_args(args=arguments)
+        command = var_replace(cmd_args, vars(args), commandText)
+        # if debug:
+        #     print ("expandedCommand = " + command)
+
+        if command.startswith("@"):
+            reparsed = shlex.split(command) # use shlex to handle quotes in a sane fashion
+            nextCommand = reparsed[0][1:] # get command with @ 
+            nextCommandArgs = reparsed[1:] # get everything after command
+            command = expandCommand(nextCommand, nextCommandArgs, depth+1) # recurse
+
+        return command
+    else:
+        raise Exception ("COULDNT FIND COMMAND: " + cmdName)
+    #print ("END expandCommand")
+
+
+parser = argparse.ArgumentParser(description='POSTER')
 parser.add_argument('--version', action='version', version='%(prog)s '+__version__)
-parser.add_argument('--set', help="Create a new command")
-parser.add_argument('-r', action="store_true", help="Read command from stdin instead of command line, may be easier for quotes")
+parser.add_argument('--debug', action="store_true", help="dump command to output")
 parser.add_argument('--list', action="store_true", help="List commands")
-parser.add_argument('-n', action="store_true", help="Don't escape commands when listing")
-choices = read_config().keys()
-parser.add_argument('--delete', help="Delete command", choices=choices)
+choices = config.options(section_commands, no_defaults=True)
 parser.add_argument('command', nargs=argparse.REMAINDER, choices=choices, help="user defined command: {%s}"%(','.join(choices)), metavar="command")
 try:
     argcomplete.autocomplete(parser)
@@ -71,45 +117,26 @@ except:
     pass
 args = parser.parse_args()
 
-if args.set:
-    commands = read_config()
-    #Create a new command
-    if args.r:
-        command = input().rstrip("\n")
-    else:
-        command = ' '.join(args.command[1:])
-    commands[args.set] = command
-    write_config(commands)
-elif args.list:
-    commands = read_config()
-    if commands:
-        print()
-        length = len(max(commands.keys()))
-        for k,v in commands.items():
-            print("%s:%s %s"%(k, ' '*(length-len(k) + 1),v if args.n else shlex.quote(v)))
-        print()
-elif args.delete:
-    commands = read_config()
-    if args.delete in commands:
-        commands.pop(args.delete, None)
-    write_config(commands)
+debug =False
+if args.debug:
+     debug=True
+     sys.argv.pop(0) # HACKY.. --debug must be first option
+
+if args.list:
+    print ("Defaults:")
+    for (name,value) in config.defaults().items():
+        print ('  %s = %s' % (name, value))
+    print()
+    print("Available commands:")
+    for name in config.options(section_commands, no_defaults=True):
+        print ('  %s = %s' % (name, config.get(section_commands, name)))
+    print()
+
 elif args.command:
-    #Look for an existing command to run
-    commands = read_config()
-    if args.command[0] in commands:
-        command = commands[args.command[0]]
-        parser = argparse.ArgumentParser(description=args.command[0])
-        cmd_args = get_vars(command)
-        for a in cmd_args:
-            parser.add_argument(a[0], default=a[1], required=False if a[1] else True)
-        sys.argv.pop(0)
-        try:
-            argcomplete.autocomplete(parser)
-        except:
-            pass
-        args = parser.parse_args()
-
-        command = var_replace(cmd_args, vars(args), command)
-
-        
+    #print (sys.argv)
+    cmdName = args.command[0]
+    command = expandCommand(cmdName, sys.argv[2:], 0)
+    if debug:
+        print("FINAL COMMAND: " + command)
+    else:
         os.system(command)
