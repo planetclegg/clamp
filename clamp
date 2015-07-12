@@ -4,7 +4,6 @@
 import argparse, os, sys
 import re
 import shlex
-import readline
 import configparser
 
 try:
@@ -105,7 +104,7 @@ def expandCommand(cmdName, arguments, depth):
     #print ("END expandCommand")
 
 
-parser = argparse.ArgumentParser(description='POSTER')
+parser = argparse.ArgumentParser(description='CLAMP')
 parser.add_argument('--version', action='version', version='%(prog)s '+__version__)
 parser.add_argument('--debug', action="store_true", help="dump command to output")
 parser.add_argument('--list', action="store_true", help="List commands")
@@ -116,6 +115,11 @@ try:
 except:
     pass
 args = parser.parse_args()
+
+# show help if no args
+if len(sys.argv) < 2:
+    parser.print_help()
+    sys.exit(1)
 
 debug =False
 if args.debug:
