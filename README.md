@@ -19,11 +19,18 @@ So I set out to hack away at the original script and this is what I came up with
 ##.clamp files
 Clamp expects a file file in the current directory called .clamp where it can find the command aliases. This allows you to create different .clamp files for different projects.
 
-This fork uses .INI style files in the format of SafeConfigParser, rather than JSON, so the configuration documentation from the original is quite different.  For the most part you won't have to escape anything when editing the .clamp file, but beware of semi-colons that are preceded by spaces may start inline comments, due to the parser rules
+This fork uses .INI style files in the format of SafeConfigParser, rather than JSON, so the configuration documentation from the original is quite different.  Unlike the original clamp, new commands are added by editing this file with a text editor, there is no command-line switch to allow for adding commands.  For the most part you won't have to escape anything when editing the .clamp file, but beware of semi-colons that are preceded by spaces may start inline comments, due to the parser rules.  See the example .clamp file for more information
+
 
 ##Install
 Manual process currently.. Sorry.  I'm a python neophyte, and was in a hurry.
 Requires python3
+
+##Windows usage
+Windows users may want to create a .BAT file or .CMD file to invoke the script and put it in your PATH, i.e. something like
+```
+c:\python34\python.exe "c:\somedir\clamp" %*
+```
 
 ##TODO
 - general clean up, there are a few hacky things in the script currently
