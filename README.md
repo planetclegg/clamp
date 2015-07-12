@@ -29,6 +29,7 @@ Requires python3
 ##Windows usage
 Windows users may want to create a .BAT file or .CMD file to invoke the script and put it in your PATH, i.e. something like
 ```
+@echo off
 c:\python34\python.exe "c:\somedir\clamp" %*
 ```
 
