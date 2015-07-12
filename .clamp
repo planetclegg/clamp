@@ -22,20 +22,20 @@ PASSWORD=
 
 [COMMANDS]
 # substitution from [DEFAULT] section (or environment) can be done as follows:
-#  %(NAME)s  (note the trailing 's')
-#substitution from command line arguments folows this syntax (creating an argument called "-post":
-#  $(-post=something)  (defaults to "something")
-#  $(-post) 		    ( no default, command line arg must be supplied)
+#   %(NAME)s  (note the trailing 's')
+# substitution from command line arguments folows this syntax (creating an argument called "-post":
+#   $(-post=something)  (defaults to "something")
+#   $(-post)            ( no default, command line arg must be supplied)
 
-get:	 			curl %(EXTRACURL)s -H %(CONTENT-TYPE)s %(SCHEME)s://%(DOMAIN)s%(PORT)s$(-path)
-post: 				curl %(EXTRACURL)s -H %(CONTENT-TYPE)s -X POST -d "$(-post)" %(SCHEME)s://%(DOMAIN)s%(PORT)s$(-path)
-getWithCookies: 	curl %(EXTRACURL)s -H %(CONTENT-TYPE)s -c cookies -b cookies %(SCHEME)s://%(DOMAIN)s%(PORT)s$(-path) 
-postWithCookies: 	curl %(EXTRACURL)s -H %(CONTENT-TYPE)s -c cookies -b cookies -X POST -d "$(-post)" %(SCHEME)s://%(DOMAIN)s%(PORT)s$(-path)
+get:                curl %(EXTRACURL)s -H %(CONTENT-TYPE)s %(SCHEME)s://%(DOMAIN)s%(PORT)s$(-path)
+post:               curl %(EXTRACURL)s -H %(CONTENT-TYPE)s -X POST -d "$(-post)" %(SCHEME)s://%(DOMAIN)s%(PORT)s$(-path)
+getWithCookies:     curl %(EXTRACURL)s -H %(CONTENT-TYPE)s -c cookies -b cookies %(SCHEME)s://%(DOMAIN)s%(PORT)s$(-path) 
+postWithCookies:    curl %(EXTRACURL)s -H %(CONTENT-TYPE)s -c cookies -b cookies -X POST -d "$(-post)" %(SCHEME)s://%(DOMAIN)s%(PORT)s$(-path)
 
 #commands can be called recursively by using an @ prefix, which will search this section for another command with that name.
 
-getFoo:		@get -path=$(-path=/api/foo)
+getFoo:     @get -path=$(-path=/api/foo)
 logout:     @postWithCookies  -path=/api/Account/Logout -post=" "
-login: 		@postWithCookies  -path=/api/Account/Login -post "{ UserName:'%(USERNAME)s', Password: '%(PASSWORD)s', RememberMe:$(-rememberMe=false)  } "
-register: 	@postWithCookies  -path=/api/Account/Register -post "{ UserName:'%(USERNAME)s', Password: '%(PASSWORD)s', ConfirmPassword:'%(PASSWORD)s'  }"     
-getToken: 	@post -path=/token -post="grant_type=password&username=%(USERNAME)s&password=%(PASSWORD)s"
+login:      @postWithCookies  -path=/api/Account/Login -post "{ UserName:'%(USERNAME)s', Password: '%(PASSWORD)s', RememberMe:$(-rememberMe=false)  } "
+register:   @postWithCookies  -path=/api/Account/Register -post "{ UserName:'%(USERNAME)s', Password: '%(PASSWORD)s', ConfirmPassword:'%(PASSWORD)s'  }"     
+getToken:   @post -path=/token -post="grant_type=password&username=%(USERNAME)s&password=%(PASSWORD)s"
