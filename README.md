@@ -24,7 +24,7 @@ This fork uses .INI style files in the format of SafeConfigParser, rather than J
 
 ##Install
 Manual process currently.. Sorry.  I'm a python neophyte, and was in a hurry.
-Requires python3
+Written for python3, but should work on older pythons (tested on 2.7)
 
 ##Windows usage
 Windows users may want to create a .BAT file or .CMD file to invoke the script and put it in your PATH, i.e. something like
