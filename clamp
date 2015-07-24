@@ -4,6 +4,8 @@
 import argparse, os, sys
 import re
 import shlex
+
+# try to import python3 parser, fallback to python2
 try:
     import configparser
 except ImportError:
