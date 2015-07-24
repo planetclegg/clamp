@@ -69,7 +69,7 @@ if not config.has_section(section_commands):
 defaults = config.defaults()
 for name in defaults.keys():
     if (name in os.environ):
-        config['DEFAULT'][name] = os.environ[name]
+        config.set('DEFAULT',name, os.environ[name])
 
 def expandCommand(cmdName, arguments, depth):
     if (depth > 5):
